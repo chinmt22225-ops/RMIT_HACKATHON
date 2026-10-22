@@ -12,8 +12,7 @@ test("reader selection opens the shared tools, and mobile layout stays within th
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test("import text and manage a collection without a model", async ({ page, request }) => {
-  const name = `Browser test ${Date.now()}`;
+test("a guest can import text and keep reading after reload", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Add something to read" }).click();
   await page.getByPlaceholder("Give this reading a name").fill("A biology curiosity");
@@ -22,18 +21,25 @@ test("import text and manage a collection without a model", async ({ page, reque
   await expect(page.locator("article h2")).toHaveText("A biology curiosity");
   await page.reload();
   await expect(page.locator("article h2")).toHaveText("A biology curiosity");
+
+});
+
+test("a signed-in reader can manage their collections", async ({ page }) => {
+  test.skip(!process.env.MARGIN_BROWSER_STATE, "Requires a real Tide login");
+  const name = `Browser test ${Date.now()}`;
+  await page.goto("/");
+  page.on("dialog", dialog => dialog.accept());
   await page.getByRole("button", { name: "Collections", exact: true }).click();
   await page.locator("main").getByRole("button", { name: "New collection", exact: true }).click();
   await page.getByPlaceholder("e.g. Things I want to understand").fill(name);
   await page.getByRole("button", { name: "Create collection", exact: true }).click();
   await expect(page.getByRole("heading", { name })).toBeVisible();
-  const data = await (await request.get("/api/collections")).json();
-  const collection = data.collections.find((c: { name: string }) => c.name === name);
-  await request.delete("/api/collections", { data: { id: collection.id } });
+  await page.getByTitle(`Delete collection ${name}`).click();
 });
 
 test("a real local model explains MCP and a finding survives reload", async ({ page, request }) => {
   test.skip(process.env.MARGIN_LIVE_AI !== "1", "Opt in for real model and source retrieval");
+  test.skip(!process.env.MARGIN_BROWSER_STATE, "Provide MARGIN_BROWSER_STATE after a real Tide login");
   await page.goto("/");
   await page.getByRole("button", { name: "Try it with “MCP”" }).click();
   await expect(page.getByRole("button", { name: "Save finding", exact: true })).toBeEnabled({ timeout: 110_000 });
@@ -50,7 +56,7 @@ test("a real local model explains MCP and a finding survives reload", async ({ p
   await page.getByRole("button", { name: /My library/ }).click();
   await expect(page.locator(".finding-card").first()).toBeVisible();
   await page.screenshot({ path: ".runtime/library.png", fullPage: true });
-  await request.delete("/api/library", { data: { id: savedId } });
+  await page.evaluate(async (id) => { await window.marginBridge!.request({ path: "/api/library", method: "DELETE", data: { id } }); }, savedId);
 });
 
 
@@ -65,4 +71,13 @@ test("a PDF with selectable text opens in the reader", async ({ page, context })
   await page.locator('input[type="file"]').setInputFiles({ name: 'science-reading.pdf', mimeType: 'application/pdf', buffer });
   await expect(page.locator('article h2')).toHaveText('science-reading', { timeout: 60000 });
   await expect(page.locator('article')).toContainText('Photosynthesis converts light energy');
+});
+
+
+test("private API routes reject anonymous requests", async ({ playwright }) => {
+  const anonymous = await playwright.request.newContext({ baseURL: 'http://localhost:3000', extraHTTPHeaders: { Origin: 'http://localhost:3000' } });
+  for (const path of ['/api/library', '/api/collections', '/api/profile']) expect((await anonymous.get(path)).status()).toBe(401);
+  expect((await anonymous.post('/api/library', {data:{}})).status()).toBe(401);
+  expect((await anonymous.post('/api/collections', {data:{}})).status()).toBe(401);
+  await anonymous.dispose();
 });

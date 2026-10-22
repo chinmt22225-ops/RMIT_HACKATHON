@@ -1,62 +1,169 @@
+[![Built with TideCloak](https://tide.org/badges/built-with-tidecloak.svg)](https://tide.org/tidecloak)
+
 # Margin
 
-A workspace for understanding anything you encounter. Read a document, select a term or passage,
-get an explanation or translation, investigate related sources, and keep useful findings with their
-original context. The browser extension uses the same assistant and library as the web app.
+## Project overview
 
-## Run locally
+Margin helps people understand anything they encounter while reading: select unfamiliar text,
+explain it in context, investigate sources, translate it, and save the discovery to a personal library.
 
-Requires Node.js 24+, npm, and [Ollama](https://ollama.com). On Linux, `zip` packages the extension.
+### 1. Vision & originality
+
+Curiosity rarely follows a syllabus. Someone reading an AI paper may stumble on “MCP”; someone else
+may wonder about a phrase, an economic idea, or a biological process. Margin connects that small
+moment of uncertainty to an explanation, related sources, and a lasting personal note. The web app
+is the main workspace; its extension brings the same tools to the page already being read.
+
+### 2. Trust constraint insight
+
+Reading material and personal questions can reveal private interests or unfinished work. A useful
+assistant needs access to a passage without making every saved finding accessible to other users.
+Margin lets guests read, explain, research, and translate without an account. Saving findings or
+using a personal library requires Tide sign-in. It runs inference on a locally configured model,
+separates each user's saved data, and uses
+TideCloak for authentication and protected requests. Source searches send the selected search text to
+Crossref and, when needed, Wikipedia for reference discovery; eligible public source pages are fetched directly. The surrounding document is supplied to the local model.
+
+### 3. Value & impact
+
+Readers can follow an unfamiliar idea without repeatedly switching tabs and retyping context. For
+example: select “MCP” in a paper → get a contextual explanation → inspect official documentation
+and related sources → save the finding with the original passage → add a personal note later.
+This supports everyday learning, research, and a reusable knowledge library.
+
+### 4. Why TideCloak matters
+
+The app uses the TideCloak SDK for sign-in and `secureFetch`. Private library APIs verify the Tide JWT
+against the exported adapter's embedded public key, check issuer/client/audience and roles, and
+verify the DPoP proof. Replay claims persist in SQLite. Library and collection queries use the
+verified subject as the owner. The extension asks the signed-in web app to make these requests;
+it does not receive the user's token, DPoP private key, or operator credentials.
+
+Signed-in tool requests use `assistant:use`; private library roles are `library:read` and `library:write`. The bootstrap enables Tide
+licensing and Tide-mode governance before enrollment and exports the real adapter afterward.
+A fresh setup must complete browser enrollment to enable sign-in; no fake adapter is provided.
+Sign-in uses TideCloak's default blue design. There is no simulated account or authentication mode.
+Guest tools continue working before sign-in is configured. Live sign-in and authenticated library,
+collection, and profile requests have been verified on the development installation; each new
+installation needs its own realm setup.
+
+### 5. Prototype & storytelling
+
+The prototype contains a reader for pasted text, public articles, and PDFs with selectable text;
+Explain, Research, Translate, Simplify, Examples, and follow-up questions; source links; a personal
+library with notes and collections; an optional display name; Markdown export; and a browser
+extension using the same backend. Chrome and Firefox development packages are included; public
+store releases are pending. Scanned PDFs need OCR and are not supported yet.
+
+## Setup
+
+Requires Node.js 24+, npm, Docker, Bash, `curl`, `jq`, and [Ollama](https://ollama.com).
+Docker Desktop can provide Docker on other systems. Extension packaging uses the included
+`web-ext` development dependency.
 
 ```sh
 npm ci
+cp .env.example .env
+# Edit .env: choose a strong KC_BOOTSTRAP_ADMIN_PASSWORD, supply your licence email,
+# and set TIDE_TERMS_ACCEPTED=yes only if you personally agree to https://tide.org/legal.
+# Keep .env private; never commit it.
+npm run init
+# Open the enrollment link it prints and complete your Tide account setup.
+# Leave the bootstrap running until data/tidecloak.json is exported.
+```
+
+Start Ollama in another terminal if it is not already running, and install the model if needed:
+
+```sh
 ollama serve
-# In another terminal, if this model is not already installed:
 ollama pull qwen3-vl:2b-instruct
 npm run extension:build
 npm run dev
 ```
 
-Open http://localhost:3000. The server binds to loopback. Model and assistant configuration lives in
-`.env.local`; copy `.env.example` to customize it. Do not commit actual environment files.
-The assistant does not download a model automatically.
+Open **http://localhost:3000** and try the sample as a guest. Sign in with Tide to save findings. Use `localhost` consistently:
+the OIDC redirect and DPoP URL must match the registered origin. The app and TideCloak ports bind to
+loopback. Customize the model with `OLLAMA_URL` and `OLLAMA_MODEL` in an ignored environment file.
+The assistant never downloads models automatically.
 
-Try the sample document: click **MCP**, use **Explain**, **Research**, **Translate**, **Simplify**, or
-**Examples**, then save a finding. Add your own text, import a public article URL, or upload a text PDF.
-Scanned PDFs require OCR and are not supported yet.
+Keep `BRAND_SKIP=1` to retain TideCloak's own sign-in design. Margin's sage theme applies to the
+reading workspace. New readers can optionally add a display name after signing in, skip it, or
+change it in Settings. No extra email is requested.
+
+The bootstrap owns only the `margin-auth` container and persistent `margin-auth-data` volume. It
+preserves existing data and refuses to overwrite a partially configured realm. An interrupted
+first enrollment should be recovered in TideCloak rather than solved by deleting the database.
+
+Tide network availability affects enrollment and sign-in. The app reports authentication errors
+without granting access to a private library. The realm template registers
+`http://localhost:3000/auth/redirect` for login and logout; existing realms must also allow that
+logout return URL. Changes to a governed realm require its owner's Tide approval. Logout return
+navigation is still awaiting that realm change on the development installation.
 
 ## Browser extension
 
-Run `npm run extension:build`, unzip `public/margin-extension.zip`, then open `chrome://extensions`,
-enable Developer mode, select Load unpacked, and choose the extension directory. You can also load
-the tracked `extension/` directory directly. Keep the web app running on the same computer.
+Run the local app, then open a browser with the extension loaded in its own development profile:
 
-Select text → right-click → Explore with Margin. The toolbar action and Ctrl+Shift+M also capture the
-current selection. Results open in Chrome's side panel. Saved findings appear in the web app's library.
+```sh
+npm run extension:open -- chrome
+# Or:
+npm run extension:open -- firefox
+```
 
-## Development
+The Chrome launcher needs Chromium or Chrome for Testing; set `CHROMIUM_PATH` if necessary.
+The Firefox launcher supports Firefox or LibreWolf; set `FIREFOX_PATH` if necessary. Firefox's
+temporary add-on lasts for that browser session. These commands preserve your normal browser
+profile and rebuild the extension automatically.
 
-See [the API contract](docs/API.md) for web app and extension integration.
+For manual development installation, run `npm run extension:build`. Load
+`artifacts/extension-chrome/` with **Load unpacked** in `chrome://extensions`, or load
+`artifacts/extension-firefox/manifest.json` using **Load Temporary Add-on** in
+`about:debugging#/runtime/this-firefox`.
+
+The build also creates `artifacts/margin-chrome.zip` and `artifacts/margin-firefox.unsigned.xpi`
+for developer submission. The Firefox package is unsigned. Public store listings are not yet
+published; the app shows local setup instructions and only enables store install links when real
+listing URLs are configured. See [release details](docs/EXTENSION_STORE.md) and [privacy](docs/PRIVACY.md).
+Guest tools work while the local app is running. To save, keep a Margin web app tab open and signed
+in on the same computer.
+
+Select text → right-click → Explore with Margin. The toolbar action and Ctrl+Shift+M also capture
+selection. Results open in a side panel; saving sends the finding to the signed-in user's library.
+The web app streams answers. The extension shows the completed response after inference and keeps the current finding when its panel is reopened. Signed-in requests pass through the first-party app bridge.
+
+## Development and validation
+
+See [the API contract](docs/API.md) for integration details.
 
 ```sh
 npm run typecheck
 npm test
 npm run build
-npm run test:e2e           # local app must be running; uses system Chromium
-MARGIN_LIVE_AI=1 npm run test:e2e  # also exercises real Ollama inference
+npm run test:e2e
+npm run doctor -- --check
 ```
 
-Source retrieval uses Wikipedia's public search API and Crossref's scholarly metadata API. Crossref
-results are labeled as metadata; the app does not claim to have read the full paper. AI explanations
-are model-generated and can be inaccurate. Follow citation links to check the underlying material.
+Browser tests require a running app and system Chromium (`CHROMIUM_PATH` can override the binary).
+Authenticated cases use a local Playwright storage-state file supplied with `MARGIN_BROWSER_STATE`;
+keep that file in an ignored directory. `MARGIN_LIVE_AI=1` also enables real model/source checks.
+Guest selection, text/PDF import, and signed-out API rejection checks do not need credentials.
+The browser suite also checks hydration when another extension inserts known content-scanner
+attributes before React starts. Translation uses bundled Noto fonts with Vietnamese glyph support,
+and translated findings keep their language when saved. Chrome's selection-to-answer flow has
+been exercised locally; Firefox packaging and linting are checked, with its full reading flow
+still pending verification.
 
-SQLite findings and collections are stored in `.data/margin.sqlite`; the last reading and language
-preference stay in the browser. Export the library as Markdown from the app.
+Source retrieval prioritizes official documentation, government and university pages, and research abstracts from [Crossref](https://www.crossref.org/documentation/retrieve-metadata/rest-api/). Wikipedia can help discover external references; at most one Wikipedia background source is included when primary excerpts and abstracts are unavailable. Familiar sample topics also have curated primary-source starting points.
 
-## Current deployment boundary
+Answers show numbered citations, **Sources cited**, and **Explore further**. Labels distinguish excerpts, abstracts, metadata, and preprints. Metadata-only records are never given to the model as evidence. Domain names and DOIs do not guarantee correctness or peer review; open the sources to assess important claims.
 
-This first product version is a **local, single-user development workspace**. Authentication,
-multi-user data ownership, TideCloak, deployment controls, and the full security review are the next
-integration phase. Do not expose this version as a shared internet service. It does not claim E2EE,
-production-ready authorization, or an active Tide realm. Raziel, Tide's guidance MCP server, is already
-available in the coding environment; it is separate from the app's inference backend.
+Findings and collections live in `.data/margin.sqlite`. The last reading is namespaced by user in
+browser storage. Existing pre-auth development records are preserved under `legacy-local` and are
+not automatically assigned to a new account. Export saved findings as Markdown from the app.
+
+## Deployment scope
+
+This configuration is for local development. Internet deployment additionally needs a stable HTTPS
+origin registered before realm bootstrap, production database/backup operations, and validation of
+the intended extension origin and hosting environment. Saved findings and the optional display name are stored in the local database, separated by the verified Tide subject. The prototype does not claim end-to-end encryption of saved text. Raziel, Tide's guidance MCP server, is separate from the Ollama inference
+backend and does not act as the app's language model.

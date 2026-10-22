@@ -1,8 +1,19 @@
 # Web app and extension API — v0.1
 
-Development base URL: `http://localhost:3000`. The initial version has no user accounts and is for
-one local workspace. The auth phase will add a shared identity contract without embedding operator
-credentials in the extension.
+Development base URL: `http://localhost:3000`. The app uses TideCloak. Private library routes require
+`Authorization: DPoP <access-token>` and a valid `DPoP` proof for the method, origin, and path.
+Use the Tide SDK's `secureFetch` with absolute URLs. Reading tools are intentionally public; private library routes never accept anonymous access.
+
+Guests can use assistant/reader endpoints subject to local guest rate limits. A presented invalid token is rejected rather than downgraded. Required roles for signed-in requests: `assistant:use` for assistant/reader; `library:read` for reading the library and
+collections; `library:write` for mutations. Ownership comes from the verified JWT subject, never
+from a submitted owner field. Missing/invalid proof returns 401, missing role 403, and requests
+from another web origin are rejected.
+
+The extension calls `runtime.sendMessage({kind:"margin-api",path,method,data})` through the browser's
+extension API (`chrome` or `browser`). For authenticated actions, its background script invokes the allowlisted `window.marginBridge.request` inside the signed-in first-party app tab. That bridge uses `secureFetch` and returns status/body/content type, without
+exposing tokens or private keys. Guest tool requests can run without an app tab; saving requires the signed-in app bridge. Extension callers receive the full completed response; the web
+app consumes it as a live stream. Keep a signed-in app tab open. Do not replace this bridge with a
+bare unauthenticated Fetch request.
 
 ## Assistant
 
@@ -41,24 +52,32 @@ Stream failures use `{"type":"error","message":"..."}`; do not treat a partial a
 Cancel by aborting the Fetch request. Normal validation errors use JSON `{ "error": "..." }` and a
 non-2xx status before the stream starts.
 
-`Source` fields: `title`, `url`, `excerpt`, `kind` (`official`, `reference`, `paper`), optional `year`.
-Research retrieves references and scholarly metadata. Citation numbers correspond to array order.
-The model must not manufacture source URLs.
+`Source` fields: `title`, `url`, `excerpt`, `kind` (`official`, `academic`, `government`, `paper`,
+`preprint`, or `reference`), optional `year`, optional `publisher`, and optional `evidence`
+(`excerpt`, `abstract`, or `metadata`). Research prioritizes primary sources and scholarly
+abstracts; metadata-only records are further-reading links, not evidence supplied to the model.
+Citation numbers correspond to array order. The model must not manufacture source URLs.
 
 ## Library
 
-- `GET /api/library` → `{insights: Insight[]}`.
-- `POST /api/library` with `{selection, action, answer, sources, collectionId: null|string, note, provider}`
+- `GET /api/library` (current user only) → `{insights: Insight[]}`.
+- `POST /api/library` with `{selection, action, language?, answer, sources, collectionId: null|string, note, provider}`
   → `201 {insight}`. The server creates `id` and `createdAt`.
 - `PATCH /api/library` with `{id, note, collectionId}` → `{insight}` or 404.
 - `DELETE /api/library` with `{id}` → `{deleted: boolean}`.
 
 ## Collections
 
-- `GET /api/collections` → `{collections: [{id,name,color,createdAt}]}`.
+- `GET /api/collections` (current user only) → `{collections: [{id,name,color,createdAt}]}`.
 - `POST /api/collections` with `{name}` → `201 {collection}`.
 - `DELETE /api/collections` with `{id}` → `{deleted: boolean}`. Findings are preserved and moved to
   the unfiled library.
+
+## Optional display name
+
+- `GET /api/profile` → `{displayName: string}` for the signed-in subject.
+- `POST /api/profile` with `{displayName}` → the saved profile. Maximum 60 characters; empty clears it.
+- Both require the `appUser` role and a valid Tide token plus DPoP proof. This is app profile data in SQLite, not a change to Tide identity or administrator-managed claims.
 
 ## Reader and status
 

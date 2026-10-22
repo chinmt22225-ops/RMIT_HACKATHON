@@ -9,13 +9,15 @@
     "dev": "node scripts/prepare.mjs && next dev --webpack --hostname 127.0.0.1 --port 3000",
     "build": "node scripts/prepare.mjs && node scripts/build-extension.mjs && next build --webpack",
     "start": "next start --hostname 127.0.0.1 --port 3000",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "extension:build": "node scripts/build-extension.mjs",
+    "extension:open": "node scripts/open-extension.mjs",
     "prepare": "node scripts/prepare.mjs",
     "init": "bash scripts/init-tidecloak.sh",
-    "doctor": "bash .tide-pack/templates/shared/tide-doctor.sh --url http://localhost:3000"
+    "doctor": "bash scripts/tide-doctor.sh --url http://localhost:3000",
+    "tide:brand": "bash scripts/enclave-branding/brand-tidecloak.sh --realm margin --name Margin --kind notes --accent 3d6655"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
@@ -35,6 +37,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "web-ext": "^10.8.0"
   }
 }

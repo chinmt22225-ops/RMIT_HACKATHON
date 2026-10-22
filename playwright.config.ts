@@ -1,2 +1,2 @@
 import { defineConfig } from "@playwright/test";
-export default defineConfig({ testDir: "./tests/browser", timeout: 120_000, workers: 1, use: { baseURL: "http://localhost:3000", headless: true, launchOptions: { executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium" }, screenshot: "only-on-failure", trace: "retain-on-failure" } });
+export default defineConfig({ testDir: "./tests/browser", timeout: 120_000, workers: 1, use: { baseURL: "http://localhost:3000", headless: true, storageState: process.env.MARGIN_BROWSER_STATE || undefined, launchOptions: { executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium" }, screenshot: "only-on-failure", trace: "retain-on-failure" } });
