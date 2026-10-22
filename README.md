@@ -34,9 +34,9 @@ the tracked `extension/` directory directly. Keep the web app running on the sam
 Select text → right-click → Explore with Margin. The toolbar action and Ctrl+Shift+M also capture the
 current selection. Results open in Chrome's side panel. Saved findings appear in the web app's library.
 
-## Team development
+## Development
 
-See [the team handoff](docs/TEAM.md) and [the shared API contract](docs/API.md).
+See [the API contract](docs/API.md) for web app and extension integration.
 
 ```sh
 npm run typecheck
