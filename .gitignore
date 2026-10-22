@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.env*
+!.env.example
+.runtime/
+.data/
+*.tsbuildinfo
+playwright-report/
+test-results/
+artifacts/
+public/pdf.worker.min.mjs
+public/margin-extension.zip
+
+.tide-pack/
+data/
+branding/
