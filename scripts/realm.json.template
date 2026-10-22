@@ -79,7 +79,7 @@
         "dpop.bound.access.tokens": "true",
         "tide.createdViaConsole": "true",
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "CLIENT_APP_URL/auth/redirect"
+        "post.logout.redirect.uris": "CLIENT_APP_URL"
       },
       "protocolMappers": [
         {

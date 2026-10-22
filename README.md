@@ -43,6 +43,8 @@ Signed-in tool requests use `assistant:use`; private library roles are `library:
 licensing and Tide-mode governance before enrollment and exports the real adapter afterward.
 A fresh setup must complete browser enrollment to enable sign-in; no fake adapter is provided.
 Sign-in uses TideCloak's default blue design. There is no simulated account or authentication mode.
+Before showing a personal workspace, Margin verifies the returned session on `/api/session` using
+the real Tide JWT signature and a fresh DPoP proof. An incomplete callback shows a retry option.
 Guest tools continue working before sign-in is configured. Live sign-in and authenticated library,
 collection, and profile requests have been verified on the development installation; each new
 installation needs its own realm setup.
@@ -96,9 +98,16 @@ first enrollment should be recovered in TideCloak rather than solved by deleting
 
 Tide network availability affects enrollment and sign-in. The app reports authentication errors
 without granting access to a private library. The realm template registers
-`http://localhost:3000/auth/redirect` for login and logout; existing realms must also allow that
-logout return URL. Changes to a governed realm require its owner's Tide approval. Logout return
-navigation is still awaiting that realm change on the development installation.
+`http://localhost:3000/auth/redirect` for login and `http://localhost:3000` for logout. The SDK keeps
+its normal login callback and uses the already-registered app origin when signing out. Changes to
+a governed realm require its owner's Tide approval.
+
+**Secure Session Verification** is Tide's browser-key verification step. It can appear without
+asking for credentials again when Tide already remembers your account. A completed login shows
+**Signed in with Tide** in Margin and enables your personal library. If the browser requests local
+network access for Tide's sign-in host, it needs that permission to reach this local installation;
+see [Tide's local browser guidance](https://docs.tide.org/FAQ/chromium-error) and
+[DPoP verification](https://docs.tide.org/Core-Concepts/dpop).
 
 ## Browser extension
 

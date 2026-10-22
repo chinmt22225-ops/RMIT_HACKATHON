@@ -90,13 +90,15 @@ src_grep() { # src_grep <grep flags> <pattern>
   grep -rIE "$@" \
     --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.mjs' --include='*.cjs' \
     --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.next-production --exclude-dir=.runtime --exclude-dir=dist --exclude-dir=build \
-    --exclude-dir=out --exclude-dir=.tide-pack --exclude-dir=.git . 2>/dev/null
+    --exclude-dir=out --exclude-dir=public --exclude-dir=artifacts --exclude-dir=.tide-pack --exclude-dir=.git . 2>/dev/null
 }
 
 # Is useDPoP set as an option in real code? A mention in a comment (the pack's own verifier has
 # one) must not count, or an app with DPoP off would be reported as having it on.
 uses_dpop() {
-  src_grep -h 'useDPoP[[:space:]]*:' | grep -vqE '^[[:space:]]*(\*|//|/\*)'
+  # Drain the pipe: grep -q can give the producer SIGPIPE under pipefail and
+  # incorrectly report DPoP missing after it already matched a real option.
+  src_grep -h 'useDPoP[[:space:]]*:' | grep -vE '^[[:space:]]*(\*|//|/\*)' >/dev/null
 }
 
 # ---------------------------------------------------------------------------------------------

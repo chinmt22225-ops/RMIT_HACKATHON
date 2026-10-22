@@ -79,6 +79,12 @@ Citation numbers correspond to array order. The model must not manufacture sourc
 - `POST /api/profile` with `{displayName}` → the saved profile. Maximum 60 characters; empty clears it.
 - Both require the `appUser` role and a valid Tide token plus DPoP proof. This is app profile data in SQLite, not a change to Tide identity or administrator-managed claims.
 
+## Session confirmation
+
+- `GET /api/session` → `{subject: string}` after server verification of the real Tide JWT and DPoP
+  proof. Returns 401 for missing or invalid authentication. The browser confirms this response
+  before showing a signed-in workspace; arriving at `/auth/redirect` alone does not sign anyone in.
+
 ## Reader and status
 
 - `POST /api/reader` with `{url}` → `{reading: {title, subtitle, text, url, kind}}`.

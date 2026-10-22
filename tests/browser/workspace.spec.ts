@@ -76,7 +76,7 @@ test("a PDF with selectable text opens in the reader", async ({ page, context })
 
 test("private API routes reject anonymous requests", async ({ playwright }) => {
   const anonymous = await playwright.request.newContext({ baseURL: 'http://localhost:3000', extraHTTPHeaders: { Origin: 'http://localhost:3000' } });
-  for (const path of ['/api/library', '/api/collections', '/api/profile']) expect((await anonymous.get(path)).status()).toBe(401);
+  for (const path of ['/api/library', '/api/collections', '/api/profile', '/api/session']) expect((await anonymous.get(path)).status()).toBe(401);
   expect((await anonymous.post('/api/library', {data:{}})).status()).toBe(401);
   expect((await anonymous.post('/api/collections', {data:{}})).status()).toBe(401);
   await anonymous.dispose();
