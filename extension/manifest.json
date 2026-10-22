@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Margin — follow your curiosity",
+  "version": "0.1.0",
+  "description": "Explain, research, translate, and save selected text to your Margin workspace.",
+  "minimum_chrome_version": "116",
+  "permissions": ["activeTab", "scripting", "contextMenus", "sidePanel", "storage"],
+  "host_permissions": ["http://localhost:3000/*", "http://127.0.0.1:3000/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Explore this page with Margin" },
+  "side_panel": { "default_path": "panel.html" },
+  "commands": { "explore-selection": { "suggested_key": { "default": "Ctrl+Shift+M", "mac": "Command+Shift+M" }, "description": "Explain the selected text in Margin" } }
+}

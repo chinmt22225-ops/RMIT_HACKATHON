@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Margin</title><link rel="stylesheet" href="panel.css"></head><body>
+<header><span class="logo">◫</span><strong>margin<span>.</span></strong><button id="open-app" title="Open your full workspace">↗</button></header>
+<div class="caption">FOLLOW YOUR CURIOSITY</div><h1>A little more understanding.</h1>
+<div id="empty"><div class="empty-icon">✧</div><h2>What caught your attention?</h2><p>Highlight something on the page, then right-click → Explore with Margin.</p><small>Or press Ctrl+Shift+M.</small></div>
+<main id="workspace" hidden><div class="caption">YOU’RE EXPLORING</div><blockquote id="selection"></blockquote><div id="origin"></div>
+<nav id="actions"><button data-action="explain">✧ Explain</button><button data-action="research">⌕ Research</button><button data-action="translate">文 Translate</button><button data-action="simplify">Simplify</button><button data-action="examples">Examples</button></nav>
+<label id="language-label" hidden>Translate into <select id="language"><option>Vietnamese</option><option>English</option><option>Spanish</option><option>Korean</option><option>Japanese</option><option>French</option><option>German</option><option>Chinese</option></select></label>
+<div id="status" role="status"></div><div id="error" role="alert" hidden></div><div id="answer"></div><div id="sources"></div>
+<div id="save-controls" hidden><select id="collection" aria-label="Save to collection"><option value="">My library</option></select><button id="save">Save finding</button></div>
+<form id="followup" hidden><input id="question" placeholder="Ask a follow-up…" aria-label="Ask a follow-up" maxlength="2000" required><button title="Send question">→</button></form>
+</main><footer>Connected to your local Margin workspace.<br><span id="footer-status">Explanations run on your computer.</span></footer><script src="panel.js"></script></body></html>
